@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge RFXCOM Somfy Window Covering",
   "name": "homebridge-rfxcom-somfy-window-covering",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Homebridge plugin for RFXCOM Somfy Window Covering",
   "license": "MIT",
   "author": "Loick MAHIEUX <loick111@gmail.com>",
