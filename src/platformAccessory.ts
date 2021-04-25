@@ -1,141 +1,176 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback } from 'homebridge';
 
-import { ExampleHomebridgePlatform } from './platform';
+import { WindowCoveringPlatform } from './platform';
+
+/**
+ * Platform Accessory Config
+ */
+export class BlindPlatformAccessoryConfig {
+  constructor(
+    public readonly deviceId: string,
+    public readonly openCloseDurationSeconds: number,
+    public readonly debug: boolean,
+  ) {
+    this.deviceId = deviceId;
+    this.openCloseDurationSeconds = openCloseDurationSeconds;
+    this.debug = debug;
+  }
+}
 
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class ExamplePlatformAccessory {
+export class BlindPlatformAccessory {
   private service: Service;
 
   /**
-   * These are just used to create a working example
-   * You should implement your own code to track the state of your accessory
+   * Accessory context
    */
-  private exampleStates = {
-    On: false,
-    Brightness: 100,
+  private context = {
+    positionState: this.platform.Characteristic.PositionState.STOPPED,
+    targetPosition: 0,
+    currentPosition: 0,
   };
 
   constructor(
-    private readonly platform: ExampleHomebridgePlatform,
+    private readonly platform: WindowCoveringPlatform,
     private readonly accessory: PlatformAccessory,
   ) {
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Default-Manufacturer')
-      .setCharacteristic(this.platform.Characteristic.Model, 'Default-Model')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'Default-Serial');
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'HCS')
+      .setCharacteristic(this.platform.Characteristic.Model, 'Window Covering')
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'HCS002');
 
-    // get the LightBulb service if it exists, otherwise create a new LightBulb service
+    // get the WindowCovering service if it exists, otherwise create a new WindowCovering service
     // you can create multiple services for each accessory
-    this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
+    this.service = this.accessory.getService(this.platform.Service.WindowCovering)
+      || this.accessory.addService(this.platform.Service.WindowCovering);
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.exampleDisplayName);
+    this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.context.device.name);
 
     // each service must implement at-minimum the "required characteristics" for the given service type
-    // see https://developers.homebridge.io/#/service/Lightbulb
+    // see https://developers.homebridge.io/#/service/WindowCovering
 
-    // register handlers for the On/Off Characteristic
-    this.service.getCharacteristic(this.platform.Characteristic.On)
-      .onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
-      .onGet(this.getOn.bind(this));               // GET - bind to the `getOn` method below
+    this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition)
+      .on('get', this.getCurrentPosition.bind(this));
 
-    // register handlers for the Brightness Characteristic
-    this.service.getCharacteristic(this.platform.Characteristic.Brightness)
-      .onSet(this.setBrightness.bind(this));       // SET - bind to the 'setBrightness` method below
+    this.service.getCharacteristic(this.platform.Characteristic.PositionState)
+      .on('get', this.getPositionState.bind(this));
 
-    /**
-     * Creating multiple services of the same type.
-     *
-     * To avoid "Cannot add a Service with the same UUID another Service without also defining a unique 'subtype' property." error,
-     * when creating multiple services of the same type, you need to use the following syntax to specify a name and subtype id:
-     * this.accessory.getService('NAME') || this.accessory.addService(this.platform.Service.Lightbulb, 'NAME', 'USER_DEFINED_SUBTYPE_ID');
-     *
-     * The USER_DEFINED_SUBTYPE must be unique to the platform accessory (if you platform exposes multiple accessories, each accessory
-     * can use the same sub type id.)
-     */
+    this.service.getCharacteristic(this.platform.Characteristic.TargetPosition)
+      .on('get', this.getTargetPosition.bind(this))
+      .on('set', this.setTargetPosition.bind(this));
 
-    // Example: add two "motion sensor" services to the accessory
-    const motionSensorOneService = this.accessory.getService('Motion Sensor One Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor One Name', 'YourUniqueIdentifier-1');
-
-    const motionSensorTwoService = this.accessory.getService('Motion Sensor Two Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor Two Name', 'YourUniqueIdentifier-2');
-
-    /**
-     * Updating characteristics values asynchronously.
-     *
-     * Example showing how to update the state of a Characteristic asynchronously instead
-     * of using the `on('get')` handlers.
-     * Here we change update the motion sensor trigger states on and off every 10 seconds
-     * the `updateCharacteristic` method.
-     *
-     */
-    let motionDetected = false;
-    setInterval(() => {
-      // EXAMPLE - inverse the trigger
-      motionDetected = !motionDetected;
-
-      // push the new value to HomeKit
-      motionSensorOneService.updateCharacteristic(this.platform.Characteristic.MotionDetected, motionDetected);
-      motionSensorTwoService.updateCharacteristic(this.platform.Characteristic.MotionDetected, !motionDetected);
-
-      this.platform.log.debug('Triggering motionSensorOneService:', motionDetected);
-      this.platform.log.debug('Triggering motionSensorTwoService:', !motionDetected);
-    }, 10000);
+    // make sure that accessory is closed by default
+    this.platform.rfxtrx.on('ready', () => {
+      this.platform.rfy.doCommand(this.accessory.context.device.config.deviceId, 'up');
+    });
   }
 
   /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
+   * Handle requests to get the current value of the "Current Position" characteristic
    */
-  async setOn(value: CharacteristicValue) {
-    // implement your own code to turn your device on/off
-    this.exampleStates.On = value as boolean;
+  getCurrentPosition(callback: CharacteristicGetCallback) {
+    this.platform.log.info('Triggered GET CurrentPosition');
+    callback(null, this.context.currentPosition);
+  }
 
-    this.platform.log.debug('Set Characteristic On ->', value);
+  private setCurrentPosition(value) {
+    this.platform.log.debug('setCurrentPosition: ', value);
+    this.context.currentPosition = value;
+    this.syncContext();
   }
 
   /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
-   *
-   * GET requests should return as fast as possbile. A long delay here will result in
-   * HomeKit being unresponsive and a bad user experience in general.
-   *
-   * If your device takes time to respond you should update the status of your device
-   * asynchronously instead using the `updateCharacteristic` method instead.
-
-   * @example
-   * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
+   * Handle requests to get the current value of the "Position State" characteristic
    */
-  async getOn(): Promise<CharacteristicValue> {
-    // implement your own code to check if the device is on
-    const isOn = this.exampleStates.On;
+  getPositionState(callback: CharacteristicGetCallback) {
+    this.platform.log.info('Triggered GET PositionState');
+    callback(null, this.context.positionState);
+  }
 
-    this.platform.log.debug('Get Characteristic On ->', isOn);
+  private setPositionState(state) {
+    this.context.positionState = state;
 
-    // if you need to return an error to show the device as "Not Responding" in the Home app:
-    // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    let stateName = '';
+    switch (state) {
+      case this.platform.Characteristic.PositionState.DECREASING:
+        stateName = 'DECREASING';
+        break;
+      case this.platform.Characteristic.PositionState.INCREASING:
+        stateName = 'INCREASING';
+        break;
+      case this.platform.Characteristic.PositionState.STOPPED:
+        stateName = 'STOPPED';
+        break;
+      default:
+        stateName = 'UNKNOWN -> ' + state;
+        break;
+    }
 
-    return isOn;
+    this.platform.log.debug('setTargetPosition', stateName);
+    this.syncContext();
   }
 
   /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, changing the Brightness
+   * Handle requests to get the current value of the "Target Position" characteristic
    */
-  async setBrightness(value: CharacteristicValue) {
-    // implement your own code to set the brightness
-    this.exampleStates.Brightness = value as number;
-
-    this.platform.log.debug('Set Characteristic Brightness -> ', value);
+  getTargetPosition(callback: CharacteristicGetCallback) {
+    this.platform.log.info('Triggered GET TargetPosition');
+    callback(null, this.context.targetPosition);
   }
 
+  /**
+   * Handle requests to set the "Target Position" characteristic
+   */
+  setTargetPosition(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+    this.platform.log.info('Triggered SET TargetPosition: ' + value);
+
+    this.context.targetPosition = +value;
+    this.syncContext();
+
+    // Action to perform
+    let action = '';
+    if (this.context.currentPosition > this.context.targetPosition) {
+      this.setPositionState(this.platform.Characteristic.PositionState.DECREASING);
+      action = 'up';
+    } else {
+      this.setPositionState(this.platform.Characteristic.PositionState.INCREASING);
+      action = 'down';
+    }
+
+    // Action
+    this.platform.log.debug('action: ' + action);
+    this.platform.log.debug('deviceId: ' + this.accessory.context.device.config.deviceId);
+    this.platform.rfy.doCommand(this.accessory.context.device.config.deviceId, action);
+
+    // Wait targetState and stop
+    if (value !== 0 && value !== 100) {
+      const moveTimeMs = (
+        Math.round(this.accessory.context.device.config.openCloseDurationSeconds * 1000)
+        * Math.abs(this.context.currentPosition - this.context.targetPosition) / 100
+      );
+
+      this.platform.log.debug('moveTimeMs: ' + moveTimeMs);
+      setTimeout(() => {
+        this.platform.rfy.doCommand(this.accessory.context.device.config.deviceId, 'stop');
+        this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
+      }, moveTimeMs);
+    }
+
+    this.setCurrentPosition(+value);
+    callback();
+  }
+
+  private syncContext() {
+    this.service.updateCharacteristic(this.platform.Characteristic.PositionState, this.context.positionState);
+    this.service.updateCharacteristic(this.platform.Characteristic.TargetPosition, this.context.targetPosition);
+    this.service.updateCharacteristic(this.platform.Characteristic.CurrentPosition, this.context.currentPosition);
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "RFXCOMSomfyWindowCovering",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -9,7 +9,43 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Somfy RFXCOM"
+      },
+      "tty": {
+        "title": "TTY",
+        "type": "string",
+        "required": true,
+        "default": "/dev/ttyUSB0"
+      },
+      "devices": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "required": true
+            },
+            "deviceId": {
+              "title": "RFXCOM deviceId",
+              "type": "string",
+              "required": true,
+              "default": "0x000000/1"
+            },
+            "openCloseDurationSeconds": {
+              "title": "Open/Close duration in seconds",
+              "type": "string",
+              "required": true
+            },
+            "debug": {
+              "title": "Debug mode",
+              "type": "boolean",
+              "required": true,
+              "default": false
+            }
+          }
+        }
       }
     }
   }

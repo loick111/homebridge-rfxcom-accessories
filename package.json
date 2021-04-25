@@ -1,16 +1,16 @@
 {
-  "private": true,
-  "displayName": "Plugin Name",
-  "name": "homebridge-plugin-name",
-  "version": "1.0.0",
-  "description": "A short description about what your plugin does.",
-  "license": "Apache-2.0",
+  "displayName": "Homebridge RFXCOM Somfy Window Covering",
+  "name": "homebridge-rfxcom-somfy-window-covering",
+  "version": "0.1.0",
+  "description": "Homebridge plugin for RFXCOM Somfy Window Covering",
+  "license": "MIT",
+  "author": "Loick MAHIEUX <loick111@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "git://github.com/loick111/homebridge-rfxcom-somfy-window-covering.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/loick111/homebridge-rfxcom-somfy-window-covering/issues"
   },
   "engines": {
     "node": ">=10.17.0",
@@ -24,9 +24,17 @@
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "rfxcom",
+    "rfxtrx",
+    "rfy",
+    "rts",
+    "somfy",
+    "window covering",
+    "blinds",
+    "homekit",
+    "awning"
   ],
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^14.14.31",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
@@ -37,5 +45,8 @@
     "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.2"
+  },
+  "dependencies": {
+    "rfxcom": "^2.4.0"
   }
 }
