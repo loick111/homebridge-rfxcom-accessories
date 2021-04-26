@@ -1,16 +1,16 @@
 {
-  "displayName": "Homebridge RFXCOM Somfy Window Covering",
-  "name": "homebridge-rfxcom-somfy-window-covering",
+  "displayName": "Homebridge RFXCOM Accessories",
+  "name": "homebridge-rfxcom-accessories",
   "version": "1.0.0",
-  "description": "Homebridge plugin for RFXCOM Somfy Window Covering",
+  "description": "Homebridge plugin for RFXCOM Accessories",
   "license": "MIT",
   "author": "Loick MAHIEUX <loick111@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git://github.com/loick111/homebridge-rfxcom-somfy-window-covering.git"
+    "url": "git://github.com/loick111/homebridge-rfxcom-accessories.git"
   },
   "bugs": {
-    "url": "https://github.com/loick111/homebridge-rfxcom-somfy-window-covering/issues"
+    "url": "https://github.com/loick111/homebridge-rfxcom-accessories/issues"
   },
   "engines": {
     "node": ">=10.17.0",

@@ -2,60 +2,57 @@
     <img src="https://github.com/homebridge/branding/raw/master/logos/homebridge-wordmark-logo-vertical.png" width="150">
 </p>
 
-# Homebridge RFXCOM Somfy Window Covering
+# Homebridge RFXCOM Accessories
 
-This Homebridge plugin allows to control Somfy Window Covers with RFXCOM device.
+This Homebridge plugin allows to control devices compatible with RFXCOM.
+
+Here is the list of implemented devices:
+
+- RFY (Somfy RTS)
 
 ## How to use
 
 You can add this plugin to your Homebridge instance by adding the following npm package:
 
-`homebridge-rfxcom-somfy-window-covering`
-
-## Development
-
-### Setup Development Environment
-
-To develop Homebridge plugins you must have Node.js 12 or later installed, and a modern code editor such as [VS Code](https://code.visualstudio.com/). This plugin template uses [TypeScript](https://www.typescriptlang.org/) to make development easier and comes with pre-configured settings for [VS Code](https://code.visualstudio.com/) and ESLint. If you are using VS Code install these extensions:
-
-- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-
-### Install Development Dependencies
-
-Using a terminal, navigate to the project folder and run this command to install the development dependencies:
-
 ```
-npm install
+npm install homebridge-rfxcom-accessories
 ```
 
-### Build Plugin
+## Configuration
 
-TypeScript needs to be compiled into JavaScript before it can run. The following command will compile the contents of your [`src`](./src) directory and put the resulting code into the `dist` folder.
+Global configuration of this plugin containing Homebridge parameters and RFXCOM parameters.
 
-```
-npm run build
-```
-
-### Link To Homebridge
-
-Run this command so your global install of Homebridge can discover the plugin in your development environment:
-
-```
-npm link
+```json
+{
+  "name": "Somfy RFXCOM",
+  "platform": "RFXCOMAccessories",
+  "tty": "/dev/ttyUSB0",
+  "debug": false
+}
 ```
 
-You can now start Homebridge, use the `-D` flag so you can see debug log messages in your plugin:
+### Devices
 
+RFXCOM can handle multiple type of devices and each one have its own configuration.
+
+#### RFY (Somfy RTS)
+
+RFY Somfy RTS can control blinds, awning, ...
+
+You need to associate first your RFXCOM to the wanted device with an external tool.
+
+You can use Domoticz to setup your RFXCOM or the official tool running only on Windows.
+
+```json
+{
+  "devices": {
+    "rfy": [
+      {
+        "name": "Store",
+        "deviceId": "0x000610/1",
+        "openCloseDurationSeconds": "20"
+      }
+    ]
+  }
+}
 ```
-homebridge -D
-```
-
-### Watch For Changes and Build Automatically
-
-If you want to have your code compile automatically as you make changes, and restart Homebridge automatically between changes you can run:
-
-```
-npm run watch
-```
-
-This will launch an instance of Homebridge in debug mode which will restart every time you make a change to the source code. It will load the config stored in the default location under `~/.homebridge`. You may need to stop other running instances of Homebridge while using this command to prevent conflicts. You can adjust the Homebridge startup command in the [`nodemon.json`](./nodemon.json) file.

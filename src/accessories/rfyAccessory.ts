@@ -1,19 +1,17 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback, uuid } from 'homebridge';
 
-import { WindowCoveringPlatform } from './platform';
+import { RFXCOMAccessories } from '../platform';
 
 /**
  * Platform Accessory Config
  */
-export class BlindPlatformAccessoryConfig {
+export class RFYAccessoryConfig {
   constructor(
     public readonly deviceId: string,
     public readonly openCloseDurationSeconds: number,
-    public readonly debug: boolean,
   ) {
     this.deviceId = deviceId;
     this.openCloseDurationSeconds = openCloseDurationSeconds;
-    this.debug = debug;
   }
 }
 
@@ -22,7 +20,7 @@ export class BlindPlatformAccessoryConfig {
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class BlindPlatformAccessory {
+export class RFYAccessory {
   private service: Service;
 
   /**
@@ -35,28 +33,23 @@ export class BlindPlatformAccessory {
   };
 
   constructor(
-    private readonly platform: WindowCoveringPlatform,
+    private readonly platform: RFXCOMAccessories,
     private readonly accessory: PlatformAccessory,
   ) {
-
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'HCS')
-      .setCharacteristic(this.platform.Characteristic.Model, 'Window Covering')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'HCS002');
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'loick111')
+      .setCharacteristic(this.platform.Characteristic.Model, 'RFY Somfy RTS')
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.UUID);
 
     // get the WindowCovering service if it exists, otherwise create a new WindowCovering service
     // you can create multiple services for each accessory
     this.service = this.accessory.getService(this.platform.Service.WindowCovering)
       || this.accessory.addService(this.platform.Service.WindowCovering);
 
-    // set the service name, this is what is displayed as the default name on the Home app
-    // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-    this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.context.device.name);
-
     // each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/WindowCovering
-
+    this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.displayName);
     this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition)
       .on('get', this.getCurrentPosition.bind(this));
 
