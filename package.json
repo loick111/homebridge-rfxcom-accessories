@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge RFXCOM Accessories",
   "name": "homebridge-rfxcom-accessories",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Homebridge plugin for RFXCOM Accessories",
   "license": "MIT",
   "author": "Loick MAHIEUX <loick111@gmail.com>",
