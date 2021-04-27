@@ -4,8 +4,7 @@
 
 # Homebridge RFXCOM Accessories
 
-This Homebridge plugin allows to control devices compatible with RFXCOM.
-
+This Homebridge plugin allows to control devices compatible with RFXCOM.\
 Here is the list of implemented devices:
 
 - RFY (Somfy RTS)
@@ -37,11 +36,9 @@ RFXCOM can handle multiple type of devices and each one have its own configurati
 
 #### RFY (Somfy RTS)
 
-RFY Somfy RTS can control blinds, awning, ...
-
-You need to associate first your RFXCOM to the wanted device with an external tool.
-
-You can use Domoticz to setup your RFXCOM or the official tool running only on Windows.
+RFY Somfy RTS can control blinds, awning, ...\
+You need to associate first your RFXCOM to the wanted device with an external tool.\
+You can use Domoticz to setup your RFXCOM or the official tool `RFXMngr` running only on Windows.
 
 ```json
 {
