@@ -1,4 +1,5 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback, uuid } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback } from 'homebridge';
+import rfxcom from 'rfxcom';
 
 import { RFXCOMAccessories } from '../platform';
 
@@ -22,6 +23,8 @@ export class RFYAccessoryConfig {
  */
 export class RFYAccessory {
   private service: Service;
+
+  private rfy;
 
   /**
    * Accessory context
@@ -60,9 +63,12 @@ export class RFYAccessory {
       .on('get', this.getTargetPosition.bind(this))
       .on('set', this.setTargetPosition.bind(this));
 
+    // setup RFXCOM protocol
+    this.rfy = new rfxcom.Rfy(this.platform.rfxtrx, rfxcom.rfy.RFY);
+
     // make sure that accessory is closed by default
     this.platform.rfxtrx.on('ready', () => {
-      this.platform.rfy.doCommand(this.accessory.context.device.config.deviceId, 'up');
+      this.rfy.doCommand(this.accessory.context.device.config.deviceId, 'up');
     });
   }
 
@@ -125,6 +131,12 @@ export class RFYAccessory {
   setTargetPosition(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.platform.log.info('Triggered SET TargetPosition: ' + value);
 
+    if (this.context.currentPosition === this.context.targetPosition) {
+      this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
+      this.platform.log.info('Already in this position, no change to perform!');
+      return callback();
+    }
+
     this.context.targetPosition = +value;
     this.syncContext();
 
@@ -141,10 +153,10 @@ export class RFYAccessory {
     // Action
     this.platform.log.debug('action: ' + action);
     this.platform.log.debug('deviceId: ' + this.accessory.context.device.config.deviceId);
-    this.platform.rfy.doCommand(this.accessory.context.device.config.deviceId, action);
+    this.rfy.doCommand(this.accessory.context.device.config.deviceId, action);
 
     // Wait targetState and stop
-    if (value !== 0 && value !== 100) {
+    if (this.context.targetPosition !== 0 && this.context.targetPosition !== 100) {
       const moveTimeMs = (
         Math.round(this.accessory.context.device.config.openCloseDurationSeconds * 1000)
         * Math.abs(this.context.currentPosition - this.context.targetPosition) / 100
@@ -152,7 +164,7 @@ export class RFYAccessory {
 
       this.platform.log.debug('moveTimeMs: ' + moveTimeMs);
       setTimeout(() => {
-        this.platform.rfy.doCommand(this.accessory.context.device.config.deviceId, 'stop');
+        this.rfy.doCommand(this.accessory.context.device.config.deviceId, 'stop');
         this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
       }, moveTimeMs);
     }

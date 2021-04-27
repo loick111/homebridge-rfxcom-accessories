@@ -17,8 +17,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
 
   // rfxcom
-  public readonly rfxtrx;
-  public readonly rfy;
+  public readonly rfxtrx: typeof rfxcom.RfxCom;
 
   constructor(
     public readonly log: Logger,
@@ -29,7 +28,6 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
 
     // rfxcom init
     this.rfxtrx = new rfxcom.RfxCom(this.config.tty, { debug: this.config.debug });
-    this.rfy = new rfxcom.Rfy(this.rfxtrx, rfxcom.rfy.RFY);
 
     this.rfxtrx.on('disconnect', () => this.log.error('ERROR: RFXtrx disconnect'));
     this.rfxtrx.on('connectfailed', () => this.log.error('ERROR: RFXtrx connect fail'));

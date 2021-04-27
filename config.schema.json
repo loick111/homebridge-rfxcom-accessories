@@ -6,19 +6,21 @@
     "type": "object",
     "properties": {
       "name": {
-        "title": "Name",
+        "title": "name",
+        "description": "Platform name",
         "type": "string",
         "required": true,
         "default": "RFXCOM"
       },
       "tty": {
-        "title": "TTY",
+        "title": "tty",
+        "description": "TTY to use to connect to RFXCOM",
         "type": "string",
         "required": true,
         "default": "/dev/ttyUSB0"
       },
       "debug": {
-        "title": "Debug mode",
+        "title": "debug mode",
         "type": "boolean",
         "required": true,
         "default": false
@@ -32,18 +34,21 @@
               "type": "object",
               "properties": {
                 "name": {
-                  "title": "Name",
+                  "title": "name",
+                  "description": "Accessory name",
                   "type": "string",
                   "required": true
                 },
                 "deviceId": {
-                  "title": "RFXCOM deviceId",
+                  "title": "deviceId",
+                  "description": "deviceId registered in RFXCOM",
                   "type": "string",
                   "required": true,
                   "default": "0x000000/1"
                 },
                 "openCloseDurationSeconds": {
-                  "title": "Open/Close duration in seconds",
+                  "value": "openCloseDurationSeconds",
+                  "description": "Open/Close duration in seconds",
                   "type": "string",
                   "required": true
                 }
