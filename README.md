@@ -8,6 +8,7 @@ This Homebridge plugin allows to control devices compatible with RFXCOM.\
 Here is the list of implemented devices:
 
 - RFY (Somfy RTS)
+- Weather sensors
 
 ## How to use
 
