@@ -3,6 +3,7 @@ import rfxcom from 'rfxcom';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { RFYAccessory, RFYAccessoryConfig } from './accessories/rfyAccessory';
+import { WeatherSensorAccessory } from './accessories/WeatherSensorAccessory';
 
 /**
  * HomebridgePlatform
@@ -17,7 +18,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
 
   // rfxcom
-  public readonly rfxtrx: typeof rfxcom.RfxCom;
+  public readonly rfxcom: typeof rfxcom.RfxCom;
 
   constructor(
     public readonly log: Logger,
@@ -27,12 +28,12 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
     this.log.debug('Finished initializing platform:', this.config.name);
 
     // rfxcom init
-    this.rfxtrx = new rfxcom.RfxCom(this.config.tty, { debug: this.config.debug });
+    this.rfxcom = new rfxcom.RfxCom(this.config.tty, { debug: this.config.debug });
 
-    this.rfxtrx.on('disconnect', () => this.log.error('ERROR: RFXtrx disconnect'));
-    this.rfxtrx.on('connectfailed', () => this.log.error('ERROR: RFXtrx connect fail'));
+    this.rfxcom.on('disconnect', () => this.log.error('ERROR: RFXtrx disconnect'));
+    this.rfxcom.on('connectfailed', () => this.log.error('ERROR: RFXtrx connect fail'));
 
-    this.rfxtrx.initialise(() => {
+    this.rfxcom.initialise(() => {
       this.log.info('RFXtrx initialized!');
     });
 
@@ -59,6 +60,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
    */
   discoverDevices() {
     this.discoverRFYDevices();
+    this.discoverWeatherSensorDevices();
   }
 
   /**
@@ -67,7 +69,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
   private discoverRFYDevices() {
 
     // Load devices from configuration
-    const devices = this.config.devices.rfy.map((device) => ({
+    const devices = this.config.devices.rfy?.map((device) => ({
       name: device.name,
       config: new RFYAccessoryConfig(
         device.deviceId,
@@ -96,5 +98,59 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
     }
+  }
+
+  /**
+   * Register weather sensors
+   */
+  private discoverWeatherSensorDevices() {
+    // listen on sensor events
+    this.rfxcom.on('temperature1', (e) => handleEvent(e));
+    this.rfxcom.on('humidity1', (e) => handleEvent(e));
+    this.rfxcom.on('temperaturehumidity1', (e) => handleEvent(e));
+
+    // Load devices from configuration
+    const devices = this.config.devices.weatherSensors?.map((device) => ({
+      id: device.id,
+      name: device.name,
+    }));
+
+    const handleEvent = (event) => {
+      this.log.info('WeatherSensor event received:', event);
+
+      // handle only configured devices
+      const device = devices.find(device => device.id === event.id);
+      if (device !== undefined) {
+        handleDevice({
+          id: event.id,
+          name: device.name,
+          temperature: event.temperature,
+          humidity: event.humidity,
+          batteryLevel: event.batteryLevel,
+        });
+      }
+    };
+
+    const handleDevice = (device) => {
+      const uuid = this.api.hap.uuid.generate(device.id);
+      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+
+      if (existingAccessory) {
+        // the accessory already exists
+        this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+
+        existingAccessory.context.device = device;
+        new WeatherSensorAccessory(this, existingAccessory);
+        this.api.updatePlatformAccessories([existingAccessory]);
+      } else {
+        // the accessory does not yet exist, so we need to create it
+        this.log.info('Adding new accessory:', device.name);
+
+        const accessory = new this.api.platformAccessory(device.name, uuid);
+        accessory.context.device = device;
+        new WeatherSensorAccessory(this, accessory);
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+      }
+    };
   }
 }

@@ -6,21 +6,20 @@
     "type": "object",
     "properties": {
       "name": {
-        "title": "name",
-        "description": "Platform name",
+        "title": "Platform name",
         "type": "string",
         "required": true,
         "default": "RFXCOM"
       },
       "tty": {
-        "title": "tty",
+        "title": "TTY",
         "description": "TTY to use to connect to RFXCOM",
         "type": "string",
         "required": true,
         "default": "/dev/ttyUSB0"
       },
       "debug": {
-        "title": "debug mode",
+        "title": "Debug mode",
         "type": "boolean",
         "required": true,
         "default": false
@@ -34,21 +33,38 @@
               "type": "object",
               "properties": {
                 "name": {
-                  "title": "name",
-                  "description": "Accessory name",
+                  "title": "Accessory name",
                   "type": "string",
                   "required": true
                 },
                 "deviceId": {
-                  "title": "deviceId",
+                  "title": "Device ID",
                   "description": "deviceId registered in RFXCOM",
                   "type": "string",
                   "required": true,
                   "default": "0x000000/1"
                 },
                 "openCloseDurationSeconds": {
-                  "value": "openCloseDurationSeconds",
+                  "value": "Open/Close duration",
                   "description": "Open/Close duration in seconds",
+                  "type": "string",
+                  "required": true
+                }
+              }
+            }
+          },
+          "weatherSensors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "title": "Accessory name",
+                  "type": "string",
+                  "required": true
+                },
+                "id": {
+                  "title": "Sensor ID",
                   "type": "string",
                   "required": true
                 }

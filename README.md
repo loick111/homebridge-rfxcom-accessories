@@ -53,3 +53,25 @@ You can use Domoticz to setup your RFXCOM or the official tool `RFXMngr` running
   }
 }
 ```
+
+#### Weather sensors
+
+RFXCOM can receive broadcast values by sensors.\
+You can find supported devices [here](http://www.rfxcom.com/oregon/en).
+
+You need to discover devices by cheking Homebridge logs.\
+You will see an info log `WeatherSensor event received:` followed by event values.\
+Finally, you'll be able to configure in plugin `Settings` the wanted `WeatherSensor` device with name and id.
+
+```json
+{
+  "devices": {
+    "weatherSensors": [
+      {
+        "name": "Salon",
+        "id": "0x7201"
+      }
+    ]
+  }
+}
+```

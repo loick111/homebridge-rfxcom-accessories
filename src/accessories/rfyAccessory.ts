@@ -64,10 +64,10 @@ export class RFYAccessory {
       .on('set', this.setTargetPosition.bind(this));
 
     // setup RFXCOM protocol
-    this.rfy = new rfxcom.Rfy(this.platform.rfxtrx, rfxcom.rfy.RFY);
+    this.rfy = new rfxcom.Rfy(this.platform.rfxcom, rfxcom.rfy.RFY);
 
     // make sure that accessory is closed by default
-    this.platform.rfxtrx.on('ready', () => {
+    this.platform.rfxcom.on('ready', () => {
       this.rfy.doCommand(this.accessory.context.device.config.deviceId, 'up');
     });
   }
