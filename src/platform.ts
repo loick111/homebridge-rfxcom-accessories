@@ -3,7 +3,7 @@ import rfxcom from 'rfxcom';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { RFYAccessory, RFYAccessoryConfig } from './accessories/rfyAccessory';
-import { WeatherSensorAccessory } from './accessories/WeatherSensorAccessory';
+import { WeatherSensorAccessory } from './accessories/weatherSensorAccessory';
 
 /**
  * HomebridgePlatform
