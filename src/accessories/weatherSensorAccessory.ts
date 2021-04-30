@@ -1,6 +1,22 @@
-import { PlatformAccessory } from 'homebridge';
+import { API, PlatformAccessory } from 'homebridge';
+import { Device } from '../device';
 
 import { RFXCOMAccessories } from '../platform';
+
+export class WeatherSensorDevice extends Device {
+  constructor(
+    public readonly api: API,
+    public readonly id: string,
+    public readonly name: string,
+    public readonly type: string,
+
+    public readonly battery: number,
+    public readonly temperature: number,
+    public readonly humidity: number,
+  ) {
+    super(api, 'WeatherSensorDevice', id, name);
+  }
+}
 
 /**
  * Platform Accessory
@@ -19,7 +35,7 @@ export class WeatherSensorAccessory {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.UUID);
 
     // battery
-    const battery = this.accessory.context.device.batteryLevel;
+    const battery = this.accessory.context.device.battery;
     if (battery !== undefined) {
       const batteryService = this.accessory.getService(this.platform.Service.Battery)
       || this.accessory.addService(this.platform.Service.Battery);

@@ -2,8 +2,9 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import rfxcom from 'rfxcom';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { RFYAccessory, RFYAccessoryConfig } from './accessories/rfyAccessory';
-import { WeatherSensorAccessory } from './accessories/weatherSensorAccessory';
+import { RFYAccessory, RFYDevice } from './accessories/rfyAccessory';
+import { WeatherSensorAccessory, WeatherSensorDevice } from './accessories/weatherSensorAccessory';
+import { Device } from './device';
 
 /**
  * HomebridgePlatform
@@ -13,6 +14,9 @@ import { WeatherSensorAccessory } from './accessories/weatherSensorAccessory';
 export class RFXCOMAccessories implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+
+  // platform devices
+  public devices: Device[] = [];
 
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
@@ -26,6 +30,9 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
     public readonly api: API,
   ) {
     this.log.debug('Finished initializing platform:', this.config.name);
+
+    // load configuration file
+    this.loadConfig();
 
     // rfxcom init
     this.rfxcom = new rfxcom.RfxCom(this.config.tty, { debug: this.config.debug });
@@ -41,6 +48,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
       log.debug('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
       this.discoverDevices();
+      this.cleanDevices();
     });
   }
 
@@ -50,15 +58,49 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
    */
   configureAccessory(accessory: PlatformAccessory) {
     this.log.info('Loading accessory from cache:', accessory.displayName);
-
-    // add the restored accessory to the accessories cache so we can track if it has already been registered
     this.accessories.push(accessory);
   }
 
-  /**
-   * Discover all devices
-   */
-  discoverDevices() {
+  private loadConfig() {
+    // Load RFY
+    this.devices.push(
+      ...this.config.devices.rfy?.map((device) =>
+        new RFYDevice(
+          this.api,
+          device.deviceId,
+          device.name,
+          device.openCloseDurationSeconds,
+        ),
+      ) || [],
+    );
+
+    // Load WeatherSensors
+    this.devices.push(
+      ...this.config.devices.weatherSensors?.map((device) =>
+        new WeatherSensorDevice(
+          this.api,
+          device.id,
+          device.name,
+          device.type,
+          device.battery,
+          device.temperature,
+          device.humidity,
+        ),
+      ) || [],
+    );
+  }
+
+  private cleanDevices() {
+    const toClean = this.accessories.filter(a => this.devices.find(d => d.uuid === a.UUID) === undefined);
+    this.log.info('Cleaning devices:', toClean.map(d => ({
+      name: d.context.device.name,
+      kind: d.context.device.kind,
+    })));
+
+    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, toClean);
+  }
+
+  private discoverDevices() {
     this.discoverRFYDevices();
     this.discoverWeatherSensorDevices();
   }
@@ -67,35 +109,24 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
    * Register RFY Somfy devices
    */
   private discoverRFYDevices() {
-
-    // Load devices from configuration
-    const devices = this.config.devices.rfy?.map((device) => ({
-      name: device.name,
-      config: new RFYAccessoryConfig(
-        device.deviceId,
-        device.openCloseDurationSeconds,
-      ),
-    }));
-
     // loop over the discovered devices and register each one if it has not already been registered
-    for (const device of devices) {
-      const uuid = this.api.hap.uuid.generate(device.name);
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+    for (const device of this.devices.filter(d => d instanceof RFYDevice)) {
+      const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.uuid);
 
       if (existingAccessory) {
         // the accessory already exists
-        this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
         existingAccessory.context.device = device;
-        this.api.updatePlatformAccessories([existingAccessory]);
         new RFYAccessory(this, existingAccessory);
+        this.api.updatePlatformAccessories([existingAccessory]);
       } else {
         // the accessory does not yet exist, so we need to create it
         this.log.info('Adding new accessory:', device.name);
-        const accessory = new this.api.platformAccessory(device.name, uuid);
+        const accessory = new this.api.platformAccessory(device.name, device.uuid);
         accessory.context.device = device;
         new RFYAccessory(this, accessory);
 
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this.accessories.push(accessory);
       }
     }
   }
@@ -105,25 +136,30 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
    */
   private discoverWeatherSensorDevices() {
     // listen on sensor events
-    this.rfxcom.on('temperature1', (e) => handleEvent(e));
-    this.rfxcom.on('humidity1', (e) => handleEvent(e));
-    this.rfxcom.on('temperaturehumidity1', (e) => handleEvent(e));
+    const addHandler = (type) => this.rfxcom.on(type, (e) => handleEvent(type, e));
+    addHandler('temperature1');
+    addHandler('humidity1');
+    addHandler('temperaturehumidity1');
+    addHandler('thermostat1');
+    addHandler('thermostat3');
+    addHandler('bbq1');
+    addHandler('temperaturerain1');
+    addHandler('temphumbaro1');
+    addHandler('wind1');
+    addHandler('uv1');
 
-    // Load devices from configuration
-    const devices = this.config.devices.weatherSensors?.map((device) => ({
-      id: device.id,
-      name: device.name,
-    }));
-
-    const handleEvent = (event) => {
-      this.log.info('WeatherSensor event received:', event);
+    const handleEvent = (type, event) => {
+      if (this.config.discover) {
+        this.log.info(`WeatherSensor event '${type}' received:\n`, event);
+      }
 
       // handle only configured devices
-      const device = devices.find(device => device.id === event.id);
+      const device = this.devices.filter(d => d instanceof WeatherSensorDevice)
+        .find(d => d.id === event.id && (d as WeatherSensorDevice).type === type);
+
       if (device !== undefined) {
         handleDevice({
-          id: event.id,
-          name: device.name,
+          ...device,
           temperature: event.temperature,
           humidity: event.humidity,
           batteryLevel: event.batteryLevel,
@@ -132,13 +168,10 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
     };
 
     const handleDevice = (device) => {
-      const uuid = this.api.hap.uuid.generate(device.id);
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+      const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.uuid);
 
       if (existingAccessory) {
         // the accessory already exists
-        this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-
         existingAccessory.context.device = device;
         new WeatherSensorAccessory(this, existingAccessory);
         this.api.updatePlatformAccessories([existingAccessory]);
@@ -146,10 +179,11 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
         // the accessory does not yet exist, so we need to create it
         this.log.info('Adding new accessory:', device.name);
 
-        const accessory = new this.api.platformAccessory(device.name, uuid);
+        const accessory = new this.api.platformAccessory(device.name, device.uuid);
         accessory.context.device = device;
         new WeatherSensorAccessory(this, accessory);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this.accessories.push(accessory);
       }
     };
   }

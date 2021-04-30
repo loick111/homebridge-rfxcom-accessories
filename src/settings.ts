@@ -6,4 +6,4 @@ export const PLATFORM_NAME = 'RFXCOMAccessories';
 /**
  * This must match the name of your plugin as defined the package.json
  */
-export const PLUGIN_NAME = 'Homebridge RFXCOM Accessories';
+export const PLUGIN_NAME = 'homebridge-rfxcom-accessories';

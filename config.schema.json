@@ -24,6 +24,13 @@
         "required": true,
         "default": false
       },
+      "discover": {
+        "title": "Discover devices",
+        "description": "Will print received devices events",
+        "type": "boolean",
+        "required": true,
+        "default": true
+      },
       "devices": {
         "type": "object",
         "properties": {
@@ -60,6 +67,12 @@
               "properties": {
                 "name": {
                   "title": "Accessory name",
+                  "type": "string",
+                  "required": true
+                },
+                "type": {
+                  "title": "Sensor Type",
+                  "description": "RFXCOM type (temperature1, humidity1, ...)",
                   "type": "string",
                   "required": true
                 },

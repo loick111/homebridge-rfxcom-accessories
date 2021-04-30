@@ -1,18 +1,16 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback, API } from 'homebridge';
 import rfxcom from 'rfxcom';
+import { Device } from '../device';
 
 import { RFXCOMAccessories } from '../platform';
-
-/**
- * Platform Accessory Config
- */
-export class RFYAccessoryConfig {
+export class RFYDevice extends Device {
   constructor(
-    public readonly deviceId: string,
+    public readonly api: API,
+    public readonly id: string,
+    public readonly name: string,
     public readonly openCloseDurationSeconds: number,
   ) {
-    this.deviceId = deviceId;
-    this.openCloseDurationSeconds = openCloseDurationSeconds;
+    super(api, 'RFYDevice', id, name);
   }
 }
 
@@ -24,7 +22,7 @@ export class RFYAccessoryConfig {
 export class RFYAccessory {
   private service: Service;
 
-  private rfy;
+  private rfy: typeof rfxcom.Rfy;
 
   /**
    * Accessory context
@@ -68,7 +66,7 @@ export class RFYAccessory {
 
     // make sure that accessory is closed by default
     this.platform.rfxcom.on('ready', () => {
-      this.rfy.doCommand(this.accessory.context.device.config.deviceId, 'up');
+      this.rfy.doCommand(this.accessory.context.device.id, 'up');
     });
   }
 
@@ -130,6 +128,7 @@ export class RFYAccessory {
    */
   setTargetPosition(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.platform.log.info('Triggered SET TargetPosition: ' + value);
+    this.context.targetPosition = +value;
 
     if (this.context.currentPosition === this.context.targetPosition) {
       this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
@@ -137,7 +136,6 @@ export class RFYAccessory {
       return callback();
     }
 
-    this.context.targetPosition = +value;
     this.syncContext();
 
     // Action to perform
@@ -152,19 +150,19 @@ export class RFYAccessory {
 
     // Action
     this.platform.log.debug('action: ' + action);
-    this.platform.log.debug('deviceId: ' + this.accessory.context.device.config.deviceId);
-    this.rfy.doCommand(this.accessory.context.device.config.deviceId, action);
+    this.platform.log.debug('deviceId: ' + this.accessory.context.device.id);
+    this.rfy.doCommand(this.accessory.context.device.id, action);
 
     // Wait targetState and stop
     if (this.context.targetPosition !== 0 && this.context.targetPosition !== 100) {
       const moveTimeMs = (
-        Math.round(this.accessory.context.device.config.openCloseDurationSeconds * 1000)
+        Math.round(this.accessory.context.device.openCloseDurationSeconds * 1000)
         * Math.abs(this.context.currentPosition - this.context.targetPosition) / 100
       );
 
       this.platform.log.debug('moveTimeMs: ' + moveTimeMs);
       setTimeout(() => {
-        this.rfy.doCommand(this.accessory.context.device.config.deviceId, 'stop');
+        this.rfy.doCommand(this.accessory.context.device.id, 'stop');
         this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
       }, moveTimeMs);
     }
