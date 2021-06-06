@@ -94,11 +94,6 @@
                   "type": "string",
                   "required": true
                 },
-                "id": {
-                  "title": "Device ID",
-                  "type": "string",
-                  "required": true
-                },
                 "type": {
                   "title": "Type",
                   "description": "lighting1, lighting2, ...",
@@ -107,6 +102,11 @@
                 },
                 "subtype": {
                   "title": "Subtype id",
+                  "type": "string",
+                  "required": true
+                },
+                "id": {
+                  "title": "Device ID",
                   "type": "string",
                   "required": true
                 }

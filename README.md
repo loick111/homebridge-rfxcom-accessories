@@ -76,3 +76,32 @@ Finally, you'll be able to configure in plugin `Settings` the wanted `WeatherSen
   }
 }
 ```
+
+#### Switch on/off
+
+You can create a switch for devices that supports on/off commands.\
+Supported devices are [here](https://github.com/rfxcom/node-rfxcom/blob/master/DeviceCommands.md) (needs switchOn and switchOff commands).
+
+You can find type and subtype [here](https://github.com/rfxcom/node-rfxcom/blob/master/lib/index.js#L148).\
+The subtype is the index of your device in the array.\
+For example, with ELRO AB400D device, the right configuration will be:
+
+- type `Lighting1`
+- subtype `2`
+
+For id, you'll find all the documentation [here](http://www.rfxcom.com/WebRoot/StoreNL2/Shops/78165469/MediaGallery/Downloads/RFXtrx_User_Guide.pdf).
+
+```json
+{
+  "devices": {
+    "switch": [
+      {
+        "name": "Fan",
+        "type": "Lighting1",
+        "subtype": "2",
+        "id": "A 1"
+      }
+    ]
+  }
+}
+```
