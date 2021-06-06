@@ -5,6 +5,7 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { RFYAccessory, RFYDevice } from './accessories/rfyAccessory';
 import { WeatherSensorAccessory, WeatherSensorDevice } from './accessories/weatherSensorAccessory';
 import { Device } from './device';
+import { SwitchDevice, SwitchAccessory } from './accessories/switchAccessory';
 
 /**
  * HomebridgePlatform
@@ -88,6 +89,19 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
         ),
       ) || [],
     );
+
+    // Load Switch
+    this.devices.push(
+      ...this.config.devices.switch?.map((device) =>
+        new SwitchDevice(
+          this.api,
+          device.id,
+          device.name,
+          device.type,
+          device.subtype,
+        ),
+      ) || [],
+    );
   }
 
   private cleanDevices() {
@@ -103,6 +117,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
   private discoverDevices() {
     this.discoverRFYDevices();
     this.discoverWeatherSensorDevices();
+    this.discoverSwitchDevices();
   }
 
   /**
@@ -186,5 +201,31 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
         this.accessories.push(accessory);
       }
     };
+  }
+
+  /**
+   * Register Switch devices
+   */
+  private discoverSwitchDevices() {
+    // loop over the discovered devices and register each one if it has not already been registered
+    for (const device of this.devices.filter(d => d instanceof SwitchDevice)) {
+      const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.uuid);
+
+      if (existingAccessory) {
+        // the accessory already exists
+        existingAccessory.context.device = device;
+        new SwitchAccessory(this, existingAccessory);
+        this.api.updatePlatformAccessories([existingAccessory]);
+      } else {
+        // the accessory does not yet exist, so we need to create it
+        this.log.info('Adding new accessory:', device.name);
+        const accessory = new this.api.platformAccessory(device.name, device.uuid);
+        accessory.context.device = device;
+        new SwitchAccessory(this, accessory);
+
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this.accessories.push(accessory);
+      }
+    }
   }
 }

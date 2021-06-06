@@ -83,6 +83,35 @@
                 }
               }
             }
+          },
+          "switch": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "title": "Accessory name",
+                  "type": "string",
+                  "required": true
+                },
+                "id": {
+                  "title": "Device ID",
+                  "type": "string",
+                  "required": true
+                },
+                "type": {
+                  "title": "Type",
+                  "description": "lighting1, lighting2, ...",
+                  "type": "string",
+                  "required": true
+                },
+                "subtype": {
+                  "title": "Subtype id",
+                  "type": "string",
+                  "required": true
+                }
+              }
+            }
           }
         }
       }
