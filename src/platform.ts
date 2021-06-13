@@ -107,7 +107,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
 
   private cleanDevices() {
     let toClean = this.accessories.filter(a => this.devices.find(d => d.uuid === a.UUID) === undefined);
-    toClean = toClean.concat(this.accessories.filter(a => _.isEqual(a.context.device, this.devices.find(d => d.uuid === a.UUID))));
+    toClean = toClean.concat(this.accessories.filter(a => !_.isEqual(a.context.device, this.devices.find(d => d.uuid === a.UUID))));
 
     this.log.info('Cleaning devices:', toClean.map(d => ({
       name: d.context.device.name,
