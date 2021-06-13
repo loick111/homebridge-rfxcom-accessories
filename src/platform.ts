@@ -4,7 +4,7 @@ import _ from 'underscore';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { RFYAccessory, RFYDevice } from './accessories/rfyAccessory';
-import { WeatherSensorAccessory, WeatherSensorDevice } from './accessories/weatherSensorAccessory';
+import { WeatherSensorAccessory, WeatherSensorDevice, WeatherSensorEvent } from './accessories/weatherSensorAccessory';
 import { Device } from './device';
 import { SwitchDevice, SwitchAccessory } from './accessories/switchAccessory';
 
@@ -84,9 +84,6 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
           device.id,
           device.name,
           device.type,
-          device.battery,
-          device.temperature,
-          device.humidity,
         ),
       ) || [],
     );
@@ -176,22 +173,21 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
         .find(d => d.id === event.id && (d as WeatherSensorDevice).type === type);
 
       if (device !== undefined) {
-        handleDevice({
-          ...device,
-          temperature: event.temperature,
-          humidity: event.humidity,
-          batteryLevel: event.batteryLevel,
-        });
+        handleDevice(device, new WeatherSensorEvent(
+          event.batteryLevel,
+          event.temperature,
+          event.humidity,
+        ));
       }
     };
 
-    const handleDevice = (device) => {
+    const handleDevice = (device, event) => {
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.uuid);
 
       if (existingAccessory) {
         // the accessory already exists
         existingAccessory.context.device = device;
-        new WeatherSensorAccessory(this, existingAccessory);
+        new WeatherSensorAccessory(this, existingAccessory, event);
         this.api.updatePlatformAccessories([existingAccessory]);
       } else {
         // the accessory does not yet exist, so we need to create it
@@ -199,7 +195,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
 
         const accessory = new this.api.platformAccessory(device.name, device.uuid);
         accessory.context.device = device;
-        new WeatherSensorAccessory(this, accessory);
+        new WeatherSensorAccessory(this, accessory, event);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
         this.accessories.push(accessory);
       }

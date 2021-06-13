@@ -9,13 +9,17 @@ export class WeatherSensorDevice extends Device {
     public readonly id: string,
     public readonly name: string,
     public readonly type: string,
-
-    public readonly battery: number,
-    public readonly temperature: number,
-    public readonly humidity: number,
   ) {
     super(api, 'WeatherSensorDevice', id, name);
   }
+}
+
+export class WeatherSensorEvent {
+  constructor(
+    public readonly battery: number,
+    public readonly temperature: number,
+    public readonly humidity: number,
+  ) {}
 }
 
 /**
@@ -27,6 +31,7 @@ export class WeatherSensorAccessory {
   constructor(
     private readonly platform: RFXCOMAccessories,
     private readonly accessory: PlatformAccessory,
+    private readonly event: WeatherSensorEvent,
   ) {
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -35,7 +40,7 @@ export class WeatherSensorAccessory {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.UUID);
 
     // battery
-    const battery = this.accessory.context.device.battery;
+    const battery = this.event.battery;
     if (battery !== undefined) {
       const batteryService = this.accessory.getService(this.platform.Service.Battery)
       || this.accessory.addService(this.platform.Service.Battery);
@@ -45,7 +50,7 @@ export class WeatherSensorAccessory {
     }
 
     // temperature
-    const temperature = this.accessory.context.device.temperature;
+    const temperature = this.event.temperature;
     if (temperature !== undefined) {
       const temperatureService = this.accessory.getService(this.platform.Service.TemperatureSensor)
       || this.accessory.addService(this.platform.Service.TemperatureSensor);
@@ -55,7 +60,7 @@ export class WeatherSensorAccessory {
     }
 
     // humidity
-    const humidity = this.accessory.context.device.humidity;
+    const humidity = this.event.humidity;
     if (humidity !== undefined) {
       const humidityService = this.accessory.getService(this.platform.Service.HumiditySensor)
       || this.accessory.addService(this.platform.Service.HumiditySensor);
