@@ -1,5 +1,6 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 import rfxcom from 'rfxcom';
+import _ from 'underscore';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { RFYAccessory, RFYDevice } from './accessories/rfyAccessory';
@@ -105,10 +106,9 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
   }
 
   private cleanDevices() {
-    const toClean = this.accessories.filter(a => this.devices.find(d => (
-      d.uuid === a.UUID
-      && d === a.context.device
-    )) === undefined);
+    let toClean = this.accessories.filter(a => this.devices.find(d => d.uuid === a.UUID) === undefined);
+    toClean = toClean.concat(this.accessories.filter(a => _.isEqual(a.context.device, this.devices.find(d => d.uuid === a.UUID))));
+
     this.log.info('Cleaning devices:', toClean.map(d => ({
       name: d.context.device.name,
       kind: d.context.device.kind,
