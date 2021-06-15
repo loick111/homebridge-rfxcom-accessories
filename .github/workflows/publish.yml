@@ -1,4 +1,4 @@
-name: Publish
+name: Homebridge Publish
 
 on:
   push:
@@ -9,8 +9,31 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./homebridge
+
     steps:
       - uses: actions/checkout@v2
+
+      - name: Extract version from tag
+        id: vars
+        run: echo ::set-output name=version::${GITHUB_REF#refs/*/}
+
+      - name: Parse semver string
+        id: semver_parser 
+        uses: booxmedialtd/ws-action-parse-semver@v1
+        with:
+          input_string: ${{ steps.vars.outputs.version }}
+
+      - name: Extract npm tag
+        id: npm
+        run: |
+          if [ "${{ steps.semver_parser.outputs.prerelease }}" == "" ]; then
+            echo ::set-output name=tag::"latest"
+          else
+            echo ::set-output name=tag::"${{ steps.semver_parser.outputs.prerelease }}"
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v1
@@ -20,6 +43,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: 'Change version'
+        uses: reedyuk/npm-version@1.1.1
+        with:
+          version: ${{ steps.semver_parser.outputs.fullversion }}
+          package: 'homebridge'
+          git-tag-version: 'false'
+
       - uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_TOKEN }}
+          package: homebridge/package.json 
+          tag: ${{ steps.npm.outputs.tag }}
