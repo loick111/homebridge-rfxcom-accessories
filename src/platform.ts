@@ -8,7 +8,6 @@ import {
   Characteristic,
 } from 'homebridge';
 import rfxcom from 'rfxcom';
-import _ from 'underscore';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { RFYAccessory, RFYDevice } from './accessories/rfyAccessory';
@@ -125,17 +124,8 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
   }
 
   private cleanDevices() {
-    let toClean = this.accessories.filter(
+    const toClean = this.accessories.filter(
       (a) => this.devices.find((d) => d.uuid === a.UUID) === undefined,
-    );
-    toClean = toClean.concat(
-      this.accessories.filter(
-        (a) =>
-          !_.isEqual(
-            a.context.device,
-            this.devices.find((d) => d.uuid === a.UUID),
-          ),
-      ),
     );
 
     this.log.info(
