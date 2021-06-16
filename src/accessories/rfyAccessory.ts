@@ -92,7 +92,7 @@ export class RFYAccessory {
    * Handle requests to get the current value of the "Current Position" characteristic
    */
   getCurrentPosition(callback: CharacteristicGetCallback) {
-    this.platform.log.info('Triggered GET CurrentPosition');
+    this.platform.log.debug('Triggered GET CurrentPosition');
     callback(null, this.context.currentPosition);
   }
 
@@ -106,7 +106,7 @@ export class RFYAccessory {
    * Handle requests to get the current value of the "Position State" characteristic
    */
   getPositionState(callback: CharacteristicGetCallback) {
-    this.platform.log.info('Triggered GET PositionState');
+    this.platform.log.debug('Triggered GET PositionState');
     callback(null, this.context.positionState);
   }
 
@@ -137,7 +137,7 @@ export class RFYAccessory {
    * Handle requests to get the current value of the "Target Position" characteristic
    */
   getTargetPosition(callback: CharacteristicGetCallback) {
-    this.platform.log.info('Triggered GET TargetPosition');
+    this.platform.log.debug('Triggered GET TargetPosition');
     callback(null, this.context.targetPosition);
   }
 
@@ -148,12 +148,14 @@ export class RFYAccessory {
     value: CharacteristicValue,
     callback: CharacteristicSetCallback,
   ) {
-    this.platform.log.info('Triggered SET TargetPosition: ' + value);
+    this.platform.log.debug('Triggered SET TargetPosition: ' + value);
     this.context.targetPosition = +value;
 
     if (this.context.currentPosition === this.context.targetPosition) {
       this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
-      this.platform.log.info('Already in this position, no change to perform!');
+      this.platform.log.debug(
+        'Already in this position, no change to perform!',
+      );
       return callback();
     }
 
