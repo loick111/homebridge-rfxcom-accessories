@@ -34,39 +34,64 @@ export class WeatherSensorAccessory {
     private readonly event: WeatherSensorEvent,
   ) {
     // set accessory information
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
+    this.accessory
+      .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'loick111')
       .setCharacteristic(this.platform.Characteristic.Model, 'WeatherSensor')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.UUID);
+      .setCharacteristic(
+        this.platform.Characteristic.SerialNumber,
+        this.accessory.UUID,
+      );
 
     // battery
     const battery = this.event.battery;
     if (battery !== undefined) {
-      const batteryService = this.accessory.getService(this.platform.Service.Battery)
-      || this.accessory.addService(this.platform.Service.Battery);
+      const batteryService =
+        this.accessory.getService(this.platform.Service.Battery) ||
+        this.accessory.addService(this.platform.Service.Battery);
 
-      batteryService.setCharacteristic(this.platform.Characteristic.Name, this.accessory.displayName);
-      batteryService.setCharacteristic(this.platform.Characteristic.BatteryLevel, battery);
+      batteryService.setCharacteristic(
+        this.platform.Characteristic.Name,
+        this.accessory.displayName,
+      );
+      batteryService.setCharacteristic(
+        this.platform.Characteristic.BatteryLevel,
+        battery,
+      );
     }
 
     // temperature
     const temperature = this.event.temperature;
     if (temperature !== undefined) {
-      const temperatureService = this.accessory.getService(this.platform.Service.TemperatureSensor)
-      || this.accessory.addService(this.platform.Service.TemperatureSensor);
+      const temperatureService =
+        this.accessory.getService(this.platform.Service.TemperatureSensor) ||
+        this.accessory.addService(this.platform.Service.TemperatureSensor);
 
-      temperatureService.setCharacteristic(this.platform.Characteristic.Name, this.accessory.displayName);
-      temperatureService.setCharacteristic(this.platform.Characteristic.CurrentTemperature, temperature);
+      temperatureService.setCharacteristic(
+        this.platform.Characteristic.Name,
+        this.accessory.displayName,
+      );
+      temperatureService.setCharacteristic(
+        this.platform.Characteristic.CurrentTemperature,
+        temperature,
+      );
     }
 
     // humidity
     const humidity = this.event.humidity;
     if (humidity !== undefined) {
-      const humidityService = this.accessory.getService(this.platform.Service.HumiditySensor)
-      || this.accessory.addService(this.platform.Service.HumiditySensor);
+      const humidityService =
+        this.accessory.getService(this.platform.Service.HumiditySensor) ||
+        this.accessory.addService(this.platform.Service.HumiditySensor);
 
-      humidityService.setCharacteristic(this.platform.Characteristic.Name, this.accessory.displayName);
-      humidityService.setCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, humidity);
+      humidityService.setCharacteristic(
+        this.platform.Characteristic.Name,
+        this.accessory.displayName,
+      );
+      humidityService.setCharacteristic(
+        this.platform.Characteristic.CurrentRelativeHumidity,
+        humidity,
+      );
     }
   }
 }

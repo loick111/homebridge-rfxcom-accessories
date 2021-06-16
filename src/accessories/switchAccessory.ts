@@ -1,4 +1,11 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback, API } from 'homebridge';
+import {
+  Service,
+  PlatformAccessory,
+  CharacteristicValue,
+  CharacteristicGetCallback,
+  CharacteristicSetCallback,
+  API,
+} from 'homebridge';
 import rfxcom from 'rfxcom';
 import { Device } from '../device';
 
@@ -31,24 +38,38 @@ export class SwitchAccessory {
     private readonly platform: RFXCOMAccessories,
     private readonly accessory: PlatformAccessory,
   ) {
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
+    this.accessory
+      .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'loick111')
       .setCharacteristic(this.platform.Characteristic.Model, 'Switch')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.UUID);
+      .setCharacteristic(
+        this.platform.Characteristic.SerialNumber,
+        this.accessory.UUID,
+      );
 
-    this.service = this.accessory.getService(this.platform.Service.Switch)
-      || this.accessory.addService(this.platform.Service.Switch);
+    this.service =
+      this.accessory.getService(this.platform.Service.Switch) ||
+      this.accessory.addService(this.platform.Service.Switch);
 
-    this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.displayName);
-    this.service.getCharacteristic(this.platform.Characteristic.On)
+    this.service.setCharacteristic(
+      this.platform.Characteristic.Name,
+      this.accessory.displayName,
+    );
+    this.service
+      .getCharacteristic(this.platform.Characteristic.On)
       .on('get', this.getValue.bind(this))
       .on('set', this.setValue.bind(this));
 
     // setup RFXCOM protocol
     if (!(rfxcom[this.accessory.context.device.type] instanceof Function)) {
-      throw new Error(`Device type '${this.accessory.context.device.type}' is unknown`);
+      throw new Error(
+        `Device type '${this.accessory.context.device.type}' is unknown`,
+      );
     }
-    this.switch = new rfxcom[this.accessory.context.device.type](this.platform.rfxcom, this.accessory.context.device.subtype);
+    this.switch = new rfxcom[this.accessory.context.device.type](
+      this.platform.rfxcom,
+      this.accessory.context.device.subtype,
+    );
 
     // make sure that accessory is off by default
     this.platform.rfxcom.on('ready', () => {
@@ -64,7 +85,7 @@ export class SwitchAccessory {
   setValue(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.platform.log.info('Triggered SET TargetPosition: ' + value);
 
-    if(value) {
+    if (value) {
       this.switch.switchOn(this.accessory.context.device.id);
     } else {
       this.switch.switchOff(this.accessory.context.device.id);

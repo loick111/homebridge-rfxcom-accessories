@@ -1,4 +1,11 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, CharacteristicSetCallback, API } from 'homebridge';
+import {
+  Service,
+  PlatformAccessory,
+  CharacteristicValue,
+  CharacteristicGetCallback,
+  CharacteristicSetCallback,
+  API,
+} from 'homebridge';
 import rfxcom from 'rfxcom';
 import { Device } from '../device';
 
@@ -38,26 +45,37 @@ export class RFYAccessory {
     private readonly accessory: PlatformAccessory,
   ) {
     // set accessory information
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
+    this.accessory
+      .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'loick111')
       .setCharacteristic(this.platform.Characteristic.Model, 'RFY Somfy RTS')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.UUID);
+      .setCharacteristic(
+        this.platform.Characteristic.SerialNumber,
+        this.accessory.UUID,
+      );
 
     // get the WindowCovering service if it exists, otherwise create a new WindowCovering service
     // you can create multiple services for each accessory
-    this.service = this.accessory.getService(this.platform.Service.WindowCovering)
-      || this.accessory.addService(this.platform.Service.WindowCovering);
+    this.service =
+      this.accessory.getService(this.platform.Service.WindowCovering) ||
+      this.accessory.addService(this.platform.Service.WindowCovering);
 
     // each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/WindowCovering
-    this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.displayName);
-    this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition)
+    this.service.setCharacteristic(
+      this.platform.Characteristic.Name,
+      this.accessory.displayName,
+    );
+    this.service
+      .getCharacteristic(this.platform.Characteristic.CurrentPosition)
       .on('get', this.getCurrentPosition.bind(this));
 
-    this.service.getCharacteristic(this.platform.Characteristic.PositionState)
+    this.service
+      .getCharacteristic(this.platform.Characteristic.PositionState)
       .on('get', this.getPositionState.bind(this));
 
-    this.service.getCharacteristic(this.platform.Characteristic.TargetPosition)
+    this.service
+      .getCharacteristic(this.platform.Characteristic.TargetPosition)
       .on('get', this.getTargetPosition.bind(this))
       .on('set', this.setTargetPosition.bind(this));
 
@@ -126,7 +144,10 @@ export class RFYAccessory {
   /**
    * Handle requests to set the "Target Position" characteristic
    */
-  setTargetPosition(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+  setTargetPosition(
+    value: CharacteristicValue,
+    callback: CharacteristicSetCallback,
+  ) {
     this.platform.log.info('Triggered SET TargetPosition: ' + value);
     this.context.targetPosition = +value;
 
@@ -141,10 +162,14 @@ export class RFYAccessory {
     // Action to perform
     let action = '';
     if (this.context.currentPosition > this.context.targetPosition) {
-      this.setPositionState(this.platform.Characteristic.PositionState.DECREASING);
+      this.setPositionState(
+        this.platform.Characteristic.PositionState.DECREASING,
+      );
       action = 'up';
     } else {
-      this.setPositionState(this.platform.Characteristic.PositionState.INCREASING);
+      this.setPositionState(
+        this.platform.Characteristic.PositionState.INCREASING,
+      );
       action = 'down';
     }
 
@@ -154,16 +179,25 @@ export class RFYAccessory {
     this.rfy.doCommand(this.accessory.context.device.id, action);
 
     // Wait targetState and stop
-    if (this.context.targetPosition !== 0 && this.context.targetPosition !== 100) {
-      const moveTimeMs = (
-        Math.round(this.accessory.context.device.openCloseDurationSeconds * 1000)
-        * Math.abs(this.context.currentPosition - this.context.targetPosition) / 100
-      );
+    if (
+      this.context.targetPosition !== 0 &&
+      this.context.targetPosition !== 100
+    ) {
+      const moveTimeMs =
+        (Math.round(
+          this.accessory.context.device.openCloseDurationSeconds * 1000,
+        ) *
+          Math.abs(
+            this.context.currentPosition - this.context.targetPosition,
+          )) /
+        100;
 
       this.platform.log.debug('moveTimeMs: ' + moveTimeMs);
       setTimeout(() => {
         this.rfy.doCommand(this.accessory.context.device.id, 'stop');
-        this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
+        this.setPositionState(
+          this.platform.Characteristic.PositionState.STOPPED,
+        );
       }, moveTimeMs);
     }
 
@@ -172,8 +206,17 @@ export class RFYAccessory {
   }
 
   private syncContext() {
-    this.service.updateCharacteristic(this.platform.Characteristic.PositionState, this.context.positionState);
-    this.service.updateCharacteristic(this.platform.Characteristic.TargetPosition, this.context.targetPosition);
-    this.service.updateCharacteristic(this.platform.Characteristic.CurrentPosition, this.context.currentPosition);
+    this.service.updateCharacteristic(
+      this.platform.Characteristic.PositionState,
+      this.context.positionState,
+    );
+    this.service.updateCharacteristic(
+      this.platform.Characteristic.TargetPosition,
+      this.context.targetPosition,
+    );
+    this.service.updateCharacteristic(
+      this.platform.Characteristic.CurrentPosition,
+      this.context.currentPosition,
+    );
   }
 }
