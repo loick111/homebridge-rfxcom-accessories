@@ -78,12 +78,12 @@ export class SwitchAccessory {
   }
 
   getValue(callback: CharacteristicGetCallback) {
-    this.platform.log.info('Triggered GET CurrentPosition');
+    this.platform.log.debug('Triggered GET CurrentPosition');
     callback(null, this.state);
   }
 
   setValue(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.platform.log.info('Triggered SET TargetPosition: ' + value);
+    this.platform.log.debug('Triggered SET TargetPosition: ' + value);
 
     if (value) {
       this.switch.switchOn(this.accessory.context.device.id);
