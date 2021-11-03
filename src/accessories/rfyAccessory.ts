@@ -165,12 +165,12 @@ export class RFYAccessory {
     let action = '';
     if (this.context.currentPosition > this.context.targetPosition) {
       this.setPositionState(
-        this.platform.Characteristic.PositionState.DECREASING,
+        this.platform.Characteristic.PositionState.INCREASING,
       );
       action = 'up';
     } else {
       this.setPositionState(
-        this.platform.Characteristic.PositionState.INCREASING,
+        this.platform.Characteristic.PositionState.DECREASING,
       );
       action = 'down';
     }
