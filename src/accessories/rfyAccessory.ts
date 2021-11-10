@@ -15,7 +15,9 @@ export class RFYDevice extends Device {
     public readonly api: API,
     public readonly id: string,
     public readonly name: string,
-    public readonly openCloseDurationSeconds: number,
+    public readonly reversed: boolean,
+    public readonly openDurationSeconds: number,
+    public readonly closeDurationSeconds: number,
   ) {
     super(api, 'RFYDevice', id, name);
   }
@@ -160,25 +162,35 @@ export class RFYAccessory {
     }
 
     this.syncContext();
+    const device = this.accessory.context.device;
+    const positionState = this.platform.Characteristic.PositionState;
 
     // Action to perform
     let action = '';
-    if (this.context.currentPosition > this.context.targetPosition) {
-      this.setPositionState(
-        this.platform.Characteristic.PositionState.DECREASING,
-      );
+    let fullActionDurationSeconds = 0;
+
+    let pos1 = this.context.currentPosition;
+    let pos2 = this.context.targetPosition;
+    if (device.reversed) {
+      const tmp = pos1;
+      pos1 = pos2;
+      pos2 = tmp;
+    }
+
+    if (pos1 > pos2) {
+      this.setPositionState(positionState.DECREASING);
       action = 'down';
+      fullActionDurationSeconds = device.openDurationSeconds;
     } else {
-      this.setPositionState(
-        this.platform.Characteristic.PositionState.INCREASING,
-      );
+      this.setPositionState(positionState.INCREASING);
       action = 'up';
+      fullActionDurationSeconds = device.closeDurationSeconds;
     }
 
     // Action
     this.platform.log.debug('action: ' + action);
-    this.platform.log.debug('deviceId: ' + this.accessory.context.device.id);
-    this.rfy.doCommand(this.accessory.context.device.id, action);
+    this.platform.log.debug('deviceId: ' + device.id);
+    this.rfy.doCommand(device.id, action);
 
     // Wait targetState and stop
     if (
@@ -186,9 +198,7 @@ export class RFYAccessory {
       this.context.targetPosition !== 100
     ) {
       const moveTimeMs =
-        (Math.round(
-          this.accessory.context.device.openCloseDurationSeconds * 1000,
-        ) *
+        (Math.round(fullActionDurationSeconds * 1000) *
           Math.abs(
             this.context.currentPosition - this.context.targetPosition,
           )) /
@@ -196,7 +206,7 @@ export class RFYAccessory {
 
       this.platform.log.debug('moveTimeMs: ' + moveTimeMs);
       setTimeout(() => {
-        this.rfy.doCommand(this.accessory.context.device.id, 'stop');
+        this.rfy.doCommand(device.id, 'stop');
         this.setPositionState(
           this.platform.Characteristic.PositionState.STOPPED,
         );
