@@ -90,7 +90,9 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
             this.api,
             device.deviceId,
             device.name,
-            device.openCloseDurationSeconds,
+            device.reversed,
+            device.openDurationSeconds,
+            device.closeDurationSeconds,
           ),
       ) || []),
     );

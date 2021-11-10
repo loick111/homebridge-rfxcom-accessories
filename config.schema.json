@@ -51,9 +51,21 @@
                   "required": true,
                   "default": "0x000000/1"
                 },
-                "openCloseDurationSeconds": {
-                  "value": "Open/Close duration",
-                  "description": "Open/Close duration in seconds",
+                "reversed": {
+                  "title": "Reverse direction",
+                  "type": "boolean",
+                  "required": true,
+                  "default": false
+                },
+                "openDurationSeconds": {
+                  "title": "Open duration",
+                  "description": "Open duration in seconds",
+                  "type": "string",
+                  "required": true
+                },
+                "closeDurationSeconds": {
+                  "title": "Close duration",
+                  "description": "Close duration in seconds",
                   "type": "string",
                   "required": true
                 }
