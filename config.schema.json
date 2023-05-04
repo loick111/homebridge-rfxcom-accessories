@@ -68,6 +68,13 @@
                   "description": "Close duration in seconds",
                   "type": "string",
                   "required": true
+                },
+                "forceCloseAtStartup": {
+                  "title": "Force close at startup",
+                  "description": "Force close at startup",
+                  "type": "boolean",
+                  "required": true,
+                  "default": true
                 }
               }
             }
@@ -121,6 +128,13 @@
                   "title": "Device ID",
                   "type": "string",
                   "required": true
+                },
+                "forceOffAtStartup": {
+                  "title": "Force off at startup",
+                  "description": "Force off at startup",
+                  "type": "boolean",
+                  "required": true,
+                  "default": true
                 }
               }
             }

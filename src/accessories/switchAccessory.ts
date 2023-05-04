@@ -17,6 +17,7 @@ export class SwitchDevice extends Device {
     public readonly name: string,
     public readonly type: string,
     public readonly subtype: string,
+    public readonly forceOffAtStartup: boolean,
   ) {
     super(api, 'SwitchDevice', id, name);
   }
@@ -71,9 +72,11 @@ export class SwitchAccessory {
       this.accessory.context.device.subtype,
     );
 
-    // make sure that accessory is off by default
+    // make sure that accessory is off by default is forceOffAtStartup is true
     this.platform.rfxcom.on('ready', () => {
-      this.switch.switchOff(this.accessory.context.device.id);
+      if (this.accessory.context.device.forceOffAtStartup) {
+        this.switch.switchOff(this.accessory.context.device.id);
+      }
     });
   }
 
