@@ -48,7 +48,8 @@ You can use Domoticz to setup your RFXCOM or the official tool `RFXMngr` running
       {
         "name": "Store",
         "deviceId": "0x000610/1",
-        "openCloseDurationSeconds": "20"
+        "openCloseDurationSeconds": "20",
+        "forceCloseAtStartup": true
       }
     ]
   }
@@ -99,7 +100,8 @@ For id, you'll find all the documentation [here](http://www.rfxcom.com/WebRoot/S
         "name": "Fan",
         "type": "Lighting1",
         "subtype": "2",
-        "id": "A 1"
+        "id": "A 1",
+        "forceOffAtStartup": true
       }
     ]
   }

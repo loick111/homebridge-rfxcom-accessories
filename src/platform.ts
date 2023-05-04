@@ -93,6 +93,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
             device.reversed,
             device.openDurationSeconds,
             device.closeDurationSeconds,
+            device.forceCloseAtStartup,
           ),
       ) || []),
     );
@@ -120,6 +121,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
             device.name,
             device.type,
             device.subtype,
+            device.forceOffAtStartup,
           ),
       ) || []),
     );

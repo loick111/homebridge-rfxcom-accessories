@@ -18,6 +18,7 @@ export class RFYDevice extends Device {
     public readonly reversed: boolean,
     public readonly openDurationSeconds: number,
     public readonly closeDurationSeconds: number,
+    public readonly forceCloseAtStartup: boolean,
   ) {
     super(api, 'RFYDevice', id, name);
   }
@@ -84,9 +85,11 @@ export class RFYAccessory {
     // setup RFXCOM protocol
     this.rfy = new rfxcom.Rfy(this.platform.rfxcom, rfxcom.rfy.RFY);
 
-    // make sure that accessory is closed by default
+    // make sure that accessory is closed by default if forceCloseAtStartup is true
     this.platform.rfxcom.on('ready', () => {
-      this.rfy.doCommand(this.accessory.context.device.id, 'up');
+      if (this.accessory.context.device.forceCloseAtStartup) {
+        this.rfy.doCommand(this.accessory.context.device.id, 'up');
+      }
     });
   }
 
