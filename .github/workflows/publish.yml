@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Extract version from tag
         id: vars
@@ -32,20 +32,20 @@ jobs:
           fi
 
       - name: Setup Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: 15.x
+          node-version: 18.x
 
       - name: Install dependencies
         run: npm install
 
       - name: 'Change version'
-        uses: reedyuk/npm-version@1.1.1
+        uses: reedyuk/npm-version@1.2
         with:
           version: ${{ steps.semver_parser.outputs.fullversion }}
           git-tag-version: 'false'
 
-      - uses: JS-DevTools/npm-publish@v1
+      - uses: JS-DevTools/npm-publish@v3
         with:
           token: ${{ secrets.NPM_TOKEN }}
           tag: ${{ steps.npm.outputs.tag }}
