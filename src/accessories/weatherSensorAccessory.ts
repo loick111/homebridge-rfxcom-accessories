@@ -16,9 +16,9 @@ export class WeatherSensorDevice extends Device {
 
 export class WeatherSensorEvent {
   constructor(
-    public readonly battery: number,
-    public readonly temperature: number,
-    public readonly humidity: number,
+    public readonly battery: number | undefined,
+    public readonly temperature: number | undefined,
+    public readonly humidity: number | undefined,
   ) {}
 }
 
