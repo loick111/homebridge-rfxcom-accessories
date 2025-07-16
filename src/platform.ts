@@ -84,7 +84,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
   private loadConfig() {
     // Load RFY
     this.devices.push(
-      ...(this.config.devices.rfy?.map(
+      ...(this.config.devices.rfy ? this.config.devices.rfy.map(
         (device) =>
           new RFYDevice(
             this.api,
@@ -95,12 +95,12 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
             device.closeDurationSeconds,
             device.forceCloseAtStartup,
           ),
-      ) || []),
+      ) : []),
     );
 
     // Load WeatherSensors
     this.devices.push(
-      ...(this.config.devices.weatherSensors?.map(
+      ...(this.config.devices.weatherSensors ? this.config.devices.weatherSensors.map(
         (device) =>
           new WeatherSensorDevice(
             this.api,
@@ -108,12 +108,12 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
             device.name,
             device.type,
           ),
-      ) || []),
+      ) : []),
     );
 
     // Load Switch
     this.devices.push(
-      ...(this.config.devices.switch?.map(
+      ...(this.config.devices.switch ? this.config.devices.switch.map(
         (device) =>
           new SwitchDevice(
             this.api,
@@ -123,7 +123,7 @@ export class RFXCOMAccessories implements DynamicPlatformPlugin {
             device.subtype,
             device.forceOffAtStartup,
           ),
-      ) || []),
+      ) : []),
     );
   }
 

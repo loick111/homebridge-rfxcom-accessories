@@ -30,9 +30,14 @@ export class RFYDevice extends Device {
  * Each accessory may expose multiple services of different service types.
  */
 export class RFYAccessory {
+  private static readonly MIN_POSITION = 0;
+  private static readonly MAX_POSITION = 100;
+
   private service: Service;
 
   private rfy: typeof rfxcom.Rfy;
+
+  private stopTimer?: NodeJS.Timeout;
 
   /**
    * Accessory context
@@ -88,7 +93,12 @@ export class RFYAccessory {
     // make sure that accessory is closed by default if forceCloseAtStartup is true
     this.platform.rfxcom.on('ready', () => {
       if (this.accessory.context.device.forceCloseAtStartup) {
-        this.rfy.doCommand(this.accessory.context.device.id, 'up');
+        try {
+          this.platform.log.info(`Force closing blind ${this.accessory.context.device.name} at startup`);
+          this.executeCommand(this.accessory.context.device.id, 'up');
+        } catch (error) {
+          this.platform.log.error('Failed to force close blind at startup:', error);
+        }
       }
     });
   }
@@ -101,7 +111,7 @@ export class RFYAccessory {
     callback(null, this.context.currentPosition);
   }
 
-  private setCurrentPosition(value) {
+  private setCurrentPosition(value: number) {
     this.platform.log.debug('setCurrentPosition: ', value);
     this.context.currentPosition = value;
     this.syncContext();
@@ -115,7 +125,7 @@ export class RFYAccessory {
     callback(null, this.context.positionState);
   }
 
-  private setPositionState(state) {
+  private setPositionState(state: number) {
     this.context.positionState = state;
 
     let stateName = '';
@@ -134,7 +144,7 @@ export class RFYAccessory {
         break;
     }
 
-    this.platform.log.debug('setTargetPosition', stateName);
+    this.platform.log.debug('setPositionState', stateName);
     this.syncContext();
   }
 
@@ -147,33 +157,14 @@ export class RFYAccessory {
   }
 
   /**
-   * Handle requests to set the "Target Position" characteristic
+   * Determine the action and duration for moving between positions
    */
-  setTargetPosition(
-    value: CharacteristicValue,
-    callback: CharacteristicSetCallback,
-  ) {
-    this.platform.log.debug('Triggered SET TargetPosition: ' + value);
-    this.context.targetPosition = +value;
-
-    if (this.context.currentPosition === this.context.targetPosition) {
-      this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
-      this.platform.log.debug(
-        'Already in this position, no change to perform!',
-      );
-      return callback();
-    }
-
-    this.syncContext();
+  private calculateMoveAction(currentPos: number, targetPos: number): { action: string; duration: number } {
     const device = this.accessory.context.device;
-    const positionState = this.platform.Characteristic.PositionState;
 
-    // Action to perform
-    let action = '';
-    let fullActionDurationSeconds = 0;
+    let pos1 = currentPos;
+    let pos2 = targetPos;
 
-    let pos1 = this.context.currentPosition;
-    let pos2 = this.context.targetPosition;
     if (device.reversed) {
       const tmp = pos1;
       pos1 = pos2;
@@ -181,43 +172,112 @@ export class RFYAccessory {
     }
 
     if (pos1 > pos2) {
-      this.setPositionState(positionState.DECREASING);
-      action = 'down';
-      fullActionDurationSeconds = device.openDurationSeconds;
+      return {
+        action: 'down',
+        duration: device.openDurationSeconds,
+      };
     } else {
-      this.setPositionState(positionState.INCREASING);
-      action = 'up';
-      fullActionDurationSeconds = device.closeDurationSeconds;
+      return {
+        action: 'up',
+        duration: device.closeDurationSeconds,
+      };
+    }
+  }
+
+  /**
+   * Execute a command to the RFY device with error handling
+   */
+  private executeCommand(deviceId: string, command: string): void {
+    try {
+      this.platform.log.debug(`Executing command: ${command} for device: ${deviceId}`);
+      this.rfy.doCommand(deviceId, command);
+    } catch (error) {
+      this.platform.log.error(`Failed to execute command ${command} for device ${deviceId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Set up a timer to stop movement at a specific position
+   */
+  private scheduleStopTimer(deviceId: string, moveTimeMs: number): void {
+    this.platform.log.debug('moveTimeMs: ' + moveTimeMs);
+
+    // Clear any existing timer
+    if (this.stopTimer) {
+      clearTimeout(this.stopTimer);
     }
 
-    // Action
-    this.platform.log.debug('action: ' + action);
-    this.platform.log.debug('deviceId: ' + device.id);
-    this.rfy.doCommand(device.id, action);
+    this.stopTimer = setTimeout(() => {
+      this.executeCommand(deviceId, 'stop');
+      this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
+      this.stopTimer = undefined;
+    }, moveTimeMs);
+  }
 
-    // Wait targetState and stop
-    if (
-      this.context.targetPosition !== 0 &&
-      this.context.targetPosition !== 100
-    ) {
-      const moveTimeMs =
-        (Math.round(fullActionDurationSeconds * 1000) *
-          Math.abs(
-            this.context.currentPosition - this.context.targetPosition,
-          )) /
-        100;
+  /**
+   * Handle requests to set the "Target Position" characteristic
+   */
+  setTargetPosition(
+    value: CharacteristicValue,
+    callback: CharacteristicSetCallback,
+  ) {
+    this.platform.log.debug('Triggered SET TargetPosition: ' + value);
 
-      this.platform.log.debug('moveTimeMs: ' + moveTimeMs);
-      setTimeout(() => {
-        this.rfy.doCommand(device.id, 'stop');
-        this.setPositionState(
-          this.platform.Characteristic.PositionState.STOPPED,
-        );
-      }, moveTimeMs);
+    const targetPosition = +value;
+
+    // Validate input
+    if (targetPosition < RFYAccessory.MIN_POSITION || targetPosition > RFYAccessory.MAX_POSITION) {
+      this.platform.log.warn(
+        `Invalid target position: ${targetPosition}. Must be between ${RFYAccessory.MIN_POSITION} and ${RFYAccessory.MAX_POSITION}`,
+      );
+      return callback(new Error('Invalid target position'));
     }
 
-    this.setCurrentPosition(+value);
-    callback();
+    this.context.targetPosition = targetPosition;
+
+    // Check if already at target position
+    if (this.context.currentPosition === this.context.targetPosition) {
+      this.setPositionState(this.platform.Characteristic.PositionState.STOPPED);
+      this.platform.log.debug('Already in this position, no change to perform!');
+      return callback();
+    }
+
+    this.syncContext();
+
+    try {
+      const device = this.accessory.context.device;
+      const { action, duration } = this.calculateMoveAction(this.context.currentPosition, this.context.targetPosition);
+
+      // Update position state
+      if (action === 'down') {
+        this.setPositionState(this.platform.Characteristic.PositionState.DECREASING);
+      } else {
+        this.setPositionState(this.platform.Characteristic.PositionState.INCREASING);
+      }
+
+      // Execute movement command
+      this.executeCommand(device.id, action);
+
+      // Schedule stop timer for partial positions
+      if (
+        this.context.targetPosition !== RFYAccessory.MIN_POSITION &&
+        this.context.targetPosition !== RFYAccessory.MAX_POSITION
+      ) {
+        const moveTimeMs = (Math.round(duration * 1000) *
+          Math.abs(this.context.currentPosition - this.context.targetPosition)) / 100;
+
+        this.scheduleStopTimer(device.id, moveTimeMs);
+      }
+
+      // Update current position
+      this.setCurrentPosition(targetPosition);
+      callback();
+
+    } catch (error) {
+      this.platform.log.error('Error setting target position:', error);
+      callback(error as Error);
+    }
   }
 
   private syncContext() {
@@ -233,5 +293,15 @@ export class RFYAccessory {
       this.platform.Characteristic.CurrentPosition,
       this.context.currentPosition,
     );
+  }
+
+  /**
+   * Cleanup method to clear any pending timers
+   */
+  public cleanup() {
+    if (this.stopTimer) {
+      clearTimeout(this.stopTimer);
+      this.stopTimer = undefined;
+    }
   }
 }

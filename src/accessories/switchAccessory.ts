@@ -62,7 +62,7 @@ export class SwitchAccessory {
       .on('set', this.setValue.bind(this));
 
     // setup RFXCOM protocol
-    if (!(rfxcom[this.accessory.context.device.type] instanceof Function)) {
+    if (typeof rfxcom[this.accessory.context.device.type] !== 'function') {
       throw new Error(
         `Device type '${this.accessory.context.device.type}' is unknown`,
       );
